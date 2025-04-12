@@ -35,9 +35,9 @@ CSS_FILE = os.path.join(EMBEDDED_DIR, "require-style.css")
 
 def run():
 
-    if DEBUG:
-        print(f"Caminho completo do arquivo de configuração: {os.path.abspath(CONFIG_FILE)}")
-        print(f"Caminho completo do arquivo de estilo CSS: {os.path.abspath(CSS_FILE)}")
+
+    # print(f"Caminho completo do arquivo de configuração: {os.path.abspath(CONFIG_FILE)}")
+    # print(f"Caminho completo do arquivo de estilo CSS: {os.path.abspath(CSS_FILE)}")
 
     try:
         # ========== CONFIGURAÇÃO DO USUÁRIO ==========
@@ -49,38 +49,38 @@ def run():
         with open(CONFIG_FILE, "r", encoding="utf-8") as f:
             config = json.load(f)
 
-        MATRICULA = config.get("matricula", "").strip()
-        SENHA = config.get("senha", "").strip()
-        RESET_DIR = config.get("reset", False)
-        DEBUG = config.get("debug", False)
+        matricula: str = str(config.get("matricula", "")).strip()
+        senha: str = config.get("senha", "").strip()
+        reset_dir: bool = config.get("reset", False)
+        debug: bool = config.get("debug", False)
 
-        if not MATRICULA or not SENHA:
+        if not matricula or not senha:
             print("[✘] Matrícula ou senha não configuradas no 'config.json'!")
             input("Pressione Enter para voltar ao menu...")
             return
 
         # ========== DIRETÓRIOS ==========
-        DOWNLOAD_DIR = os.path.join(BASE_DIR, "UVV_Materiais")
-        PROVA_DIR = os.path.join(DOWNLOAD_DIR, "Provas")
-        IMG_DIR = os.path.join(PROVA_DIR, "Content", "img")
-        CSS_DIR = os.path.join(PROVA_DIR, "Content", "css")
+        download_dir = os.path.join(BASE_DIR, "UVV_Materiais")
+        prova_dir = os.path.join(download_dir, "Provas")
+        img_dir = os.path.join(prova_dir, "Content", "img")
+        css_dir = os.path.join(prova_dir, "Content", "css")
 
-        if RESET_DIR and os.path.exists(DOWNLOAD_DIR):
-            if DEBUG:
+        if reset_dir and os.path.exists(download_dir):
+            if debug:
                 print("[!] Resetando diretório UVV_Materiais...")
-            shutil.rmtree(DOWNLOAD_DIR)
+            shutil.rmtree(download_dir)
 
-        os.makedirs(IMG_DIR, exist_ok=True)
-        os.makedirs(CSS_DIR, exist_ok=True)
+        os.makedirs(img_dir, exist_ok=True)
+        os.makedirs(css_dir, exist_ok=True)
 
         # ========== DOWNLOAD IMAGENS ==========
-        IMG_URLS = [
+        img_urls = [
             "https://aluno.uvv.br/Content/img/tickMarckRed.png",
             "https://aluno.uvv.br/Content/img/tickMarckGreen.png"
         ]
-        for url in IMG_URLS:
+        for url in img_urls:
             nome = url.split("/")[-1]
-            caminho = os.path.join(IMG_DIR, nome)
+            caminho = os.path.join(img_dir, nome)
             if not os.path.exists(caminho):
                 r = requests.get(url)
                 if r.status_code == 200:
@@ -88,15 +88,15 @@ def run():
                         f.write(r.content)
 
         # ========== DOWNLOAD CSS ==========
-        CSS_URLS = [
+        css_urls = [
             "https://aluno.uvv.br/Content/css/bootstrap.min.css",
             "https://aluno.uvv.br/Content/css/font-awesome.min.css",
             "https://aluno.uvv.br/Content/css/estilo.css",
             "https://aluno.uvv.br/Content/css/app.css"
         ]
-        for url in CSS_URLS:
+        for url in css_urls:
             nome = url.split("/")[-1]
-            caminho = os.path.join(CSS_DIR, nome)
+            caminho = os.path.join(css_dir, nome)
             if not os.path.exists(caminho):
                 r = requests.get(url)
                 if r.status_code == 200:
@@ -107,14 +107,14 @@ def run():
         with open(CSS_FILE, "r", encoding="utf-8") as f:
             custom_css = f.read()
 
-        with open(os.path.join(CSS_DIR, "custom-checkbox.css"), "w", encoding="utf-8") as f:
+        with open(os.path.join(css_dir, "custom-checkbox.css"), "w", encoding="utf-8") as f:
             f.write(custom_css)
 
         # ========== INICIAR SELENIUM ==========
         options = Options()
         options.add_argument("--start-maximized")
         prefs = {
-            "download.default_directory": DOWNLOAD_DIR,
+            "download.default_directory": download_dir,
             "download.prompt_for_download": False,
             "download.directory_upgrade": True,
             "safebrowsing.enabled": True
@@ -125,8 +125,8 @@ def run():
         # ========== LOGIN ==========
         driver.get("https://aluno.uvv.br/Login")
         time.sleep(2)
-        driver.find_element(By.ID, "Matricula").send_keys(MATRICULA)
-        driver.find_element(By.ID, "Password").send_keys(SENHA, Keys.RETURN)
+        driver.find_element(By.ID, "Matricula").send_keys(matricula)
+        driver.find_element(By.ID, "Password").send_keys(senha, Keys.RETURN)
 
         time.sleep(4)
         driver.get("https://aluno.uvv.br/AgendamentoProva")
@@ -171,7 +171,7 @@ def run():
                         + "_-_" + data_sanitizada + ".html"
                     )
 
-                    path_saida = os.path.join(PROVA_DIR, nome_arquivo)
+                    path_saida = os.path.join(prova_dir, nome_arquivo)
                     if os.path.exists(path_saida):
                         print(f"[-] Já existe: {nome_arquivo}, pulando...")
                         continue
@@ -233,6 +233,6 @@ def run():
         driver.quit()
         print("[✔] Finalizado.")
     except Exception as e:
-        print("[ERRO FATAL]")
+        print(f"[ERRO FATAL]: {e}")
         traceback.print_exc()
         input("Pressione Enter para sair...")
