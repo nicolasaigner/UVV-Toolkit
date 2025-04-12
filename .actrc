@@ -1,0 +1,6 @@
+# .actrc - Configurações locais para rodar GitHub Actions com nektos/act
+# Só funciona com Docker instalado localmente
+-P ubuntu-latest=python:3.11-slim
+-j build
+--bind
+--verbose
