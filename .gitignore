@@ -181,3 +181,4 @@ cython_debug/
 UVV_Materiais/
 config.json
 !uvv_toolkit.spec
+SECRET.txt
