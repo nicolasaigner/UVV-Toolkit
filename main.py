@@ -2,6 +2,7 @@ import sys
 import json
 import menu
 import busca_provas_corrigidas
+import traceback
 
 SOFTWARE_NAME = "UVV CLI Toolkit"
 VERSION = "v1.0.0"
@@ -41,16 +42,24 @@ def configurar_usuario():
     input("Pressione Enter para voltar ao menu...")
 
 def executar_opcao(label, chave):
-    if chave == "exit":
-        print("Saindo...")
-        sys.exit(0)
-    elif chave == "config":
-        configurar_usuario()
-    elif chave == "busca_provas":
-        busca_provas_corrigidas.run()
+    try:
+        if chave == "exit":
+            print("Saindo...")
+            menu.Menu.cls()
+            sys.exit(0)
+        elif chave == "config":
+            menu.Menu.cls()
+            configurar_usuario()
+        elif chave == "busca_provas":
+            menu.Menu.cls()
+            busca_provas_corrigidas.run()
+            input("\nPressione Enter para voltar ao menu...")
+        else:
+            input(f"\n[!] '{label}' ainda não implementado. Pressione Enter para voltar...")
+    except Exception as e:
+        print("\n[ERRO NO MENU]")
+        traceback.print_exc()
         input("\nPressione Enter para voltar ao menu...")
-    else:
-        input(f"\n[!] '{label}' ainda não implementado. Pressione Enter para voltar...")
 
 def main():
     while True:
