@@ -180,3 +180,4 @@ cython_debug/
 # Project
 UVV_Materiais/
 config.json
+!uvv_toolkit.spec
