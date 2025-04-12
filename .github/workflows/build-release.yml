@@ -36,7 +36,11 @@ jobs:
       - name: Main Obter versão do main.py
         id: obter_versao
         run: |
-          VERSAO=$(grep -oP '__version__\s*=\s*"\K[0-9]+\.[0-9]+\.[0-9]+' main.py)
+          VERSAO=$(grep -oP 'VERSION\s*=\s*"\Kv?[0-9]+\.[0-9]+\.[0-9]+' main.py || true)
+          if [ -z "$VERSAO" ]; then
+            echo "❌ Não foi possível extrair a versão do main.py"
+            exit 1
+          fi
           echo "versao=v$VERSAO" >> $GITHUB_OUTPUT
 
       - name: Main Criar release
