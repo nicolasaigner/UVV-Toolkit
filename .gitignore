@@ -179,3 +179,4 @@ cython_debug/
 
 # Project
 UVV_Materiais/
+config.json

@@ -1,0 +1,12 @@
+/*
+*    O código gera um arquivo config.json automaticamente, caso não exista.
+*    Quando for rodar pela primeira vez, selecione a opção de "Configurações do Usuário" no menu. Insira sua matrícula e senha quando for solicitado.
+*    Caso não queira fazer isso, basta criar o arquivo config.json manualmente com o seguinte conteúdo: e com os valores entre as aspas.
+*    Obs.: Se for copiar o o arquivo config_example.json, lembre-se de renomeá-lo para config.json e apagar os comentários.
+*/
+{
+    "matricula": "", // Matrícula que você usa no portal do aluno
+    "senha": "", // Senha que você usa no portal do aluno
+    "reset": false, // Se deixar como true, toda vez que rodar o software, o programa irá apagar os dados do arquivo de saída e criar um novo.
+    "debug": false // Se deixar como true, o programa irá imprimir mensagens de debug no console.
+}
