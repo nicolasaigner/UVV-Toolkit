@@ -14,9 +14,6 @@ env:
 
 jobs:
 
-  ##########################################################################
-  ## 🏗 JOB: Build executável para Windows e Linux
-  ##########################################################################
   build:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -24,7 +21,7 @@ jobs:
         os:
           - ubuntu-latest
           - windows-latest
-#         - macos-latest  # (Habilitar futuramente se necessário)
+#         - macos-latest
 
     steps:
       - name: 📥 Checkout código
@@ -45,39 +42,12 @@ jobs:
         run: |
           python build.py
 
-      - name: 🏷 Renomear executável (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          VERSION=$(python -c "import main; print(main.VERSION)")
-          mv dist/${{ env.EXECUTABLE_NAME }}.exe dist/${{ env.EXECUTABLE_NAME }}_win_x86_64-${VERSION}.exe
-        shell: bash
-
-      - name: 🏷 Renomear executável (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          VERSION=$(python -c "import main; print(main.VERSION)")
-          mv dist/${{ env.EXECUTABLE_NAME }} dist/${{ env.EXECUTABLE_NAME }}_linux_x86_64-${VERSION}
-        shell: bash
-
-#      - name: 🏷 Renomear e zipar executável (macOS)
-#        if: runner.os == 'macOS'
-#        run: |
-#          VERSION=$(python -c "import main; print(main.VERSION)")
-#          mv dist/${{ env.EXECUTABLE_NAME }} dist/${{ env.EXECUTABLE_NAME }}_universal_apple_darwin-${VERSION}
-#          cd dist
-#          zip UVV_Toolkit_universal_apple_darwin-${VERSION}.zip UVV_Toolkit_universal_apple_darwin-${VERSION}
-#          rm UVV_Toolkit_universal_apple_darwin-${VERSION}
-#        shell: bash
-
       - name: ☁️ Upload artefatos
         uses: actions/upload-artifact@v4
         with:
           name: ${{ runner.os }}-build
           path: dist/*
 
-  ##########################################################################
-  ## 🚀 JOB: Criar release com artefatos do build
-  ##########################################################################
   release:
     needs: build
     runs-on: ubuntu-latest
@@ -117,13 +87,10 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            dist/windows/*.exe
+            dist/windows/*
             dist/linux/*
 #            dist/macos/*.zip
 
-  ##########################################################################
-  ## 🔁 JOB: Rollback automático se o build falhar
-  ##########################################################################
   rollback:
     needs: build
     if: ${{ failure() }}
