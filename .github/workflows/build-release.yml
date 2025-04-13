@@ -25,49 +25,32 @@ jobs:
         with:
           python-version: 3.11
 
-      - name: Extrair versão do main.py
-        id: version
-        run: |
-          VERSION=$(grep '^VERSION' main.py | cut -d'"' -f2)
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Instalar dependências
+      - name: Instalar PyInstaller
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt pyinstaller
+          pip install pyinstaller
 
       - name: Rodar build com PyInstaller
         run: |
           python build.py
         shell: bash
 
-      - name: Renomear executável Windows
-        if: runner.os == 'Windows'
-        run: |
-          mv dist/UVV_Toolkit.exe dist/UVV_Toolkit_win_x86_64-${{ env.VERSION }}.exe
-
-      - name: Renomear executável Linux
-        if: runner.os == 'Linux'
-        run: |
-          mv dist/UVV_Toolkit dist/UVV_Toolkit_linux_x86_64-${{ env.VERSION }}
-
-      - name: Renomear executável macOS
-        if: runner.os == 'macOS'
-        run: |
-          mv dist/UVV_Toolkit dist/UVV_Toolkit_universal_apple_darwin-${{ env.VERSION }}.app
-
-      - name: Upload de artefatos
+      - name: Upload artefato
         uses: actions/upload-artifact@v4
         with:
           name: ${{ runner.os }}-build
-          path: dist/*
+          path: |
+            dist/*
 
   release:
     needs: build
     runs-on: ubuntu-latest
+    if: ${{ success() }}
 
     steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
       - name: Baixar artefatos (Windows)
         uses: actions/download-artifact@v4
         with:
@@ -86,16 +69,14 @@ jobs:
           name: macOS-build
           path: ./dist/macos
 
-      - name: Obter versão do main.py
-        id: version
+      - name: Extrair versão do main.py
+        id: extract_version
         run: |
-          VERSION=$(grep '^VERSION' main.py | cut -d'"' -f2)
+          VERSION=$(grep 'VERSION =' main.py | sed -E 's/.*\"(.*)\".*/\1/')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Versão detectada: $VERSION"
 
-      - name: Criar release e enviar executáveis
-        id: create_release
-        continue-on-error: true
+      - name: Criar release
         uses: softprops/action-gh-release@v2
         with:
           name: Release ${{ env.VERSION }}
@@ -103,16 +84,27 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            dist/windows/*.exe
+            dist/windows/*
             dist/linux/*
             dist/macos/*
 
-      - name: Rollback se falhar
-        if: steps.create_release.outcome == 'failure'
+  rollback:
+    needs: build
+    if: ${{ failure() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extrair versão do main.py
+        id: extract_version
+        run: |
+          VERSION=$(grep 'VERSION =' main.py | sed -E 's/.*\"(.*)\".*/\1/')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Versão detectada: $VERSION"
+
+      - name: Deletar release e tag
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
-          VERSION: ${{ env.VERSION }}
         run: |
-          echo "⚠️ Falha na release. Deletando release e tag..."
+          echo "🧨 Build falhou. Deletando tag e release da versão $VERSION..."
           gh release delete "$VERSION" --yes || true
-          gh api -X DELETE /repos/${{ github.repository }}/git/refs/tags/"$VERSION" || true
+          gh api -X DELETE /repos/${{ github.repository }}/git/refs/tags/$VERSION || true
+        shell: bash
