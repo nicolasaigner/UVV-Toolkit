@@ -9,19 +9,31 @@ permissions:
   contents: write
   actions: write
 
-env:
-  EXECUTABLE_NAME: UVV_Toolkit
-
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.extract_version.outputs.version }}
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Extrair versão do main.py
+        id: extract_version
+        run: |
+          VERSION=$(grep '^VERSION *= *"' main.py | head -n1 | sed -E 's/.*"([^"]+)".*/\1/')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
   build:
+    needs: prepare
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [
-          ubuntu-latest,
-          windows-latest
-#         macos-latest
-        ]
+        os: [ubuntu-latest, windows-latest]
+        # macos-latest (comentado)
+
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
 
     steps:
       - name: Checkout código
@@ -36,25 +48,24 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pyinstaller
-          python -m pip install -r ./requirements.txt
+          pip install -r requirements.txt
 
       - name: Rodar build com PyInstaller
-        run: |
-          set -e
-          python build.py
-        shell: bash
+        run: python build.py
 
       - name: Upload de artefatos
         uses: actions/upload-artifact@v4
         with:
           name: ${{ runner.os }}-build
-          path: |
-            dist/*
+          path: dist/*
 
   release:
-    needs: build
+    needs: [prepare, build]
     runs-on: ubuntu-latest
-    if: ${{ success() }}
+
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+
     steps:
       - name: Baixar artefatos (Windows)
         uses: actions/download-artifact@v4
@@ -68,46 +79,35 @@ jobs:
           name: Linux-build
           path: ./dist/linux
 
-#     - name: Baixar artefatos (macOS)
-#       uses: actions/download-artifact@v4
-#       with:
-#         name: macOS-build
-#         path: ./dist/macos
-
-      - name: Obter versão do código
-        id: extract_version
-        run: |
-          set -e
-          VERSION=$(grep 'VERSION' main.py | sed -E 's/.*VERSION *= *"([^"]+)".*/\1/')
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      # - name: Baixar artefatos (macOS)
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: macOS-build
+      #     path: ./dist/macos
 
       - name: Criar release e enviar executáveis
         uses: softprops/action-gh-release@v2
         with:
-          name: Release ${{ steps.extract_version.outputs.version }}
-          tag_name: ${{ steps.extract_version.outputs.version }}
+          name: Release ${{ env.VERSION }}
+          tag_name: ${{ env.VERSION }}
           draft: false
           prerelease: false
           files: |
             dist/windows/*
             dist/linux/*
-#           dist/macos/*.zip
+            # dist/macos/*.zip
 
   rollback:
-    needs: build
     if: ${{ failure() }}
+    needs: [prepare, build]
     runs-on: ubuntu-latest
-    steps:
-      - name: Obter versão do código
-        run: |
-          set -e
-          VERSION=$(grep 'VERSION' main.py | sed -E 's/.*VERSION *= *"([^"]+)".*/\1/')
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      GH_PAT: ${{ secrets.GH_PAT }}
+
+    steps:
       - name: Deletar tag e release se falhar
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           echo "🔁 Build falhou. Deletando tag e release..."
           gh release delete "$VERSION" --yes || true
