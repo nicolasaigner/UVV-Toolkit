@@ -1,4 +1,3 @@
-import os
 import sys
 import shutil
 import subprocess
@@ -54,7 +53,7 @@ def main():
     novo_nome = dist_dir / nome_final(sistema, versao)
     original.rename(novo_nome)
 
-    print(f"[✔] Build concluído com sucesso: {novo_nome}")
+    print(f"[OK] Build concluído com sucesso: {novo_nome}")
 
 if __name__ == "__main__":
     try:
