@@ -1,13 +1,12 @@
 # UVV CLI Toolkit
 
-**Versão:** v1.0.0  
-**Plataforma suportada:** Windows (.exe)  
-**Autor:** Nícolas
-
+![GitHub Release](https://img.shields.io/github/v/release/nicolasaigner/UVV-Toolkit?label=Vers%C3%A3o%20Est%C3%A1vel)
+![Custom Badge](https://img.shields.io/badge/Plataforma_suportada-Windows_(.exe)-blue)
+![GitHub Downloads (all assets, latest release)](https://img.shields.io/github/downloads/nicolasaigner/UVV-Toolkit/latest/total?label=Downloads&color=25c2a0)
+![GitHub Release Date](https://img.shields.io/github/release-date/nicolasaigner/UVV-Toolkit?label=Data%20do%20lan%C3%A7amento)
+![GitHub top language](https://img.shields.io/github/languages/top/nicolasaigner/UVV-Toolkit)
 [![Build and Release UVV CLI Toolkit](https://github.com/nicolasaigner/UVV-Toolkit/actions/workflows/build-release.yml/badge.svg?branch=main)](https://github.com/nicolasaigner/UVV-Toolkit/actions/workflows/build-release.yml)
-![Windows Downloads](https://img.shields.io/github/downloads/nicolasaigner/UVV-Toolkit/UVV_Toolkit_win_x86_64-v1.0.0.exe?label=Windows%20Downloads)
-![ZIP Downloads](https://img.shields.io/github/nicolasaigner/UVV-Toolkit/archive/refs/tags/v1.0.0.zip?label=ZIP%20Downloads)
-![TAR GZ Downloads](https://img.shields.io/github/nicolasaigner/UVV-Toolkit/archive/refs/tags/v1.0.0.tar.gz?label=TAR%20GZ%20Downloads)
+
 
 
 ## 📘 Descrição
