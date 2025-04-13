@@ -80,13 +80,13 @@ jobs:
           set -e
           VERSION=$(grep 'VERSION' main.py | sed -E 's/.*VERSION *= *"([^"]+)".*/\1/')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Criar release e enviar executáveis
         uses: softprops/action-gh-release@v2
         with:
-          name: Release ${{ steps.extract_version.outputs.VERSION }}
-          tag_name: ${{ steps.extract_version.outputs.VERSION }}
+          name: Release ${{ steps.extract_version.outputs.version }}
+          tag_name: ${{ steps.extract_version.outputs.version }}
           draft: false
           prerelease: false
           files: |
