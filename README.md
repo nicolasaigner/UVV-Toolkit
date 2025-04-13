@@ -59,18 +59,17 @@ Essas informações serão salvas em `config.json`, no mesmo diretório, e utili
 
 Você verá um menu como este no terminal:
 
-```
-==================================================
-  UVV CLI Toolkit - v1.0.0
-  Utilitário CLI para tarefas automatizadas do Portal UVV
-==================================================
+![UVV_CLI_Sequencia](https://github.com/user-attachments/assets/cefae4c8-2163-4a4f-a80b-247e0f3ab989)
 
-[>] Buscar Provas Corrigidas
-[ ] Configurações do Usuário
-[ ] Sair
-```
+Use as **teclas direcionais** **`↑`** e **`↓`** para navegar e pressione **`Enter`** para executar a opção selecionada.
 
-Use as teclas direcionais para navegar e pressione `Enter` para executar a opção selecionada.
+> [!IMPORTANT]
+> Quando finalizar, saia da aplicação, pois ela continua "escutando" o teclado.
+
+
+Os arquivos das provas você verá em um pasta onde você executou o software, o nome da pasta será UVV_Materias e dentro tem as provas em `.html` e uma pasta `Content` com o `CSS` para deixar "bonitinha" a prova. 
+
+Abra os arquivos `HTML` no navegador, caso queira exportar para PDF, utilize o `Imprimir` do seu navegador, geralmente, no Google Chorme é atalho `Ctrl + P`.
 
 ---
 
