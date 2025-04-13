@@ -10,7 +10,6 @@ permissions:
   actions: write
 
 env:
-  VERSION: v1.0.0
   EXECUTABLE_NAME: UVV_Toolkit
 
 jobs:
@@ -35,25 +34,30 @@ jobs:
           pip install pyinstaller
 
       - name: Rodar build com PyInstaller
-        run: python build.py
+        run: |
+          python build.py
         shell: bash
 
       - name: Renomear executável (Windows)
         if: runner.os == 'Windows'
         run: |
-          mv dist/${{ env.EXECUTABLE_NAME }}.exe dist/${{ env.EXECUTABLE_NAME }}_win_x86_64-${{ env.VERSION }}.exe
+          VERSION=$(python -c "import main; print(main.VERSION)")
+          mv dist/${{ env.EXECUTABLE_NAME }}.exe dist/${{ env.EXECUTABLE_NAME }}_win_x86_64-${VERSION}.exe
 
       - name: Renomear executável (Linux)
         if: runner.os == 'Linux'
         run: |
-          mv dist/${{ env.EXECUTABLE_NAME }} dist/${{ env.EXECUTABLE_NAME }}_linux_x86_64-${{ env.VERSION }}
+          VERSION=$(python -c "import main; print(main.VERSION)")
+          mv dist/${{ env.EXECUTABLE_NAME }} dist/${{ env.EXECUTABLE_NAME }}_linux_x86_64-${VERSION}
 
-      - name: Compactar app macOS
+      - name: Renomear e zipar executável (macOS)
         if: runner.os == 'macOS'
         run: |
+          VERSION=$(python -c "import main; print(main.VERSION)")
+          mv dist/${{ env.EXECUTABLE_NAME }} dist/${{ env.EXECUTABLE_NAME }}_universal_apple_darwin-${VERSION}
           cd dist
-          zip -r ${{ env.EXECUTABLE_NAME }}_universal_apple_darwin-${{ env.VERSION }}.zip ${{ env.EXECUTABLE_NAME }}.app
-          rm -rf ${{ env.EXECUTABLE_NAME }}.app
+          zip UVV_Toolkit_universal_apple_darwin-${VERSION}.zip UVV_Toolkit_universal_apple_darwin-${VERSION}
+          rm UVV_Toolkit_universal_apple_darwin-${VERSION}
 
       - name: Upload de artefatos
         uses: actions/upload-artifact@v4
@@ -66,7 +70,6 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: ${{ success() }}
-
     steps:
       - name: Baixar artefatos (Windows)
         uses: actions/download-artifact@v4
@@ -86,11 +89,18 @@ jobs:
           name: macOS-build
           path: ./dist/macos
 
+      - name: Obter versão do código
+        id: get_version
+        run: |
+          VERSION=$(python -c "import main; print(main.VERSION)")
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Criar release e enviar executáveis
         uses: softprops/action-gh-release@v2
         with:
-          name: Release ${{ env.VERSION }}
-          tag_name: ${{ env.VERSION }}
+          name: Release ${{ steps.get_version.outputs.version }}
+          tag_name: ${{ steps.get_version.outputs.version }}
           draft: false
           prerelease: false
           files: |
@@ -103,12 +113,15 @@ jobs:
     if: ${{ failure() }}
     runs-on: ubuntu-latest
     steps:
+      - name: Obter versão do código
+        run: |
+          VERSION=$(python -c "import main; print(main.VERSION)")
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
       - name: Deletar tag e release se falhar
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
-          VERSION: v1.0.0
         run: |
           echo "🔁 Build falhou. Deletando tag e release..."
-          gh release delete $VERSION --yes || true
-          gh api -X DELETE /repos/${{ github.repository }}/git/refs/tags/$VERSION || true
-        shell: bash
+          gh release delete "$VERSION" --yes || true
+          gh api -X DELETE /repos/${{ github.repository }}/git/refs/tags/"$VERSION" || true
