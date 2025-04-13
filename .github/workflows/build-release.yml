@@ -13,48 +13,53 @@ env:
   EXECUTABLE_NAME: UVV_Toolkit
 
 jobs:
+
+  ##########################################################################
+  ## 🏗 JOB: Build executável para Windows e Linux
+  ##########################################################################
   build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [
-          ubuntu-latest,
-          windows-latest,
-#          macos-latest
-        ]
+        os:
+          - ubuntu-latest
+          - windows-latest
+#         - macos-latest  # (Habilitar futuramente se necessário)
 
     steps:
-      - name: Checkout código
+      - name: 📥 Checkout código
         uses: actions/checkout@v4
 
-      - name: Configurar Python
+      - name: 🐍 Configurar Python
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
 
-      - name: Instalar dependências
+      - name: 📦 Instalar dependências
         run: |
           python -m pip install --upgrade pip
           pip install pyinstaller
+          pip install -r requirements.txt
 
-      - name: Rodar build com PyInstaller
+      - name: 🛠 Rodar build com PyInstaller
         run: |
           python build.py
-        shell: bash
 
-      - name: Renomear executável (Windows)
+      - name: 🏷 Renomear executável (Windows)
         if: runner.os == 'Windows'
         run: |
           VERSION=$(python -c "import main; print(main.VERSION)")
           mv dist/${{ env.EXECUTABLE_NAME }}.exe dist/${{ env.EXECUTABLE_NAME }}_win_x86_64-${VERSION}.exe
+        shell: bash
 
-      - name: Renomear executável (Linux)
+      - name: 🏷 Renomear executável (Linux)
         if: runner.os == 'Linux'
         run: |
           VERSION=$(python -c "import main; print(main.VERSION)")
           mv dist/${{ env.EXECUTABLE_NAME }} dist/${{ env.EXECUTABLE_NAME }}_linux_x86_64-${VERSION}
+        shell: bash
 
-#      - name: Renomear e zipar executável (macOS)
+#      - name: 🏷 Renomear e zipar executável (macOS)
 #        if: runner.os == 'macOS'
 #        run: |
 #          VERSION=$(python -c "import main; print(main.VERSION)")
@@ -62,45 +67,49 @@ jobs:
 #          cd dist
 #          zip UVV_Toolkit_universal_apple_darwin-${VERSION}.zip UVV_Toolkit_universal_apple_darwin-${VERSION}
 #          rm UVV_Toolkit_universal_apple_darwin-${VERSION}
+#        shell: bash
 
-      - name: Upload de artefatos
+      - name: ☁️ Upload artefatos
         uses: actions/upload-artifact@v4
         with:
           name: ${{ runner.os }}-build
-          path: |
-            dist/*
+          path: dist/*
 
+  ##########################################################################
+  ## 🚀 JOB: Criar release com artefatos do build
+  ##########################################################################
   release:
     needs: build
     runs-on: ubuntu-latest
     if: ${{ success() }}
+
     steps:
-      - name: Baixar artefatos (Windows)
+      - name: 📦 Baixar artefatos (Windows)
         uses: actions/download-artifact@v4
         with:
           name: Windows-build
           path: ./dist/windows
 
-      - name: Baixar artefatos (Linux)
+      - name: 📦 Baixar artefatos (Linux)
         uses: actions/download-artifact@v4
         with:
           name: Linux-build
           path: ./dist/linux
 
-#      - name: Baixar artefatos (macOS)
+#      - name: 📦 Baixar artefatos (macOS)
 #        uses: actions/download-artifact@v4
 #        with:
 #          name: macOS-build
 #          path: ./dist/macos
 
-      - name: Obter versão do código
+      - name: 🔍 Obter versão do código
         id: get_version
         run: |
           VERSION=$(python -c "import main; print(main.VERSION)")
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Criar release e enviar executáveis
+      - name: 🚀 Criar release e enviar executáveis
         uses: softprops/action-gh-release@v2
         with:
           name: Release ${{ steps.get_version.outputs.version }}
@@ -112,17 +121,21 @@ jobs:
             dist/linux/*
 #            dist/macos/*.zip
 
+  ##########################################################################
+  ## 🔁 JOB: Rollback automático se o build falhar
+  ##########################################################################
   rollback:
     needs: build
     if: ${{ failure() }}
     runs-on: ubuntu-latest
+
     steps:
-      - name: Obter versão do código
+      - name: 🔍 Obter versão do código
         run: |
           VERSION=$(python -c "import main; print(main.VERSION)")
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: Deletar tag e release se falhar
+      - name: ❌ Deletar release e tag se build falhar
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |

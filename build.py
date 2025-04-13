@@ -19,8 +19,8 @@ def nome_final(sistema, versao):
         return f"{base}_win_x86_64-{versao}.exe"
     elif sistema == "Linux":
         return f"{base}_linux_x86_64-{versao}"
-    elif sistema == "Darwin":
-        return f"{base}_universal_apple_darwin-{versao}.app"
+    # elif sistema == "Darwin":
+    #     return f"{base}_universal_apple_darwin-{versao}.app"
     else:
         raise RuntimeError(f"Sistema operacional não suportado: {sistema}")
 
