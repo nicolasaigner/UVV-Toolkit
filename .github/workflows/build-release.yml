@@ -13,81 +13,92 @@ env:
   EXECUTABLE_NAME: UVV_Toolkit
 
 jobs:
-
   build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os:
-          - ubuntu-latest
-          - windows-latest
-#         - macos-latest
+        os: [
+          ubuntu-latest,
+          windows-latest
+#          macos-latest
+        ]
 
     steps:
-      - name: 📥 Checkout código
+      - name: Checkout código
         uses: actions/checkout@v4
 
-      - name: 🐍 Configurar Python
+      - name: Obter versão do código
+        id: extract_version
+        run: |
+          VERSION=$(grep -oP 'VERSION\s*=\s*"\K[^"]+' main.py)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Configurar Python
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
 
-      - name: 📦 Instalar dependências
+      - name: Instalar dependências
         run: |
           python -m pip install --upgrade pip
           pip install pyinstaller
-          pip install -r requirements.txt
+          python -m pip install -r requirements.txt
 
-      - name: 🛠 Rodar build com PyInstaller
+      - name: Rodar build com PyInstaller
         run: |
           python build.py
+        shell: bash
 
-      - name: ☁️ Upload artefatos
+      # Artefatos já são gerados com nome final no build.py, não precisa renomear!
+
+      - name: Upload de artefatos
         uses: actions/upload-artifact@v4
         with:
           name: ${{ runner.os }}-build
-          path: dist/*
+          path: |
+            dist/*
 
   release:
     needs: build
     runs-on: ubuntu-latest
     if: ${{ success() }}
-
     steps:
-      - name: 📦 Baixar artefatos (Windows)
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Obter versão do código
+        run: |
+          VERSION=$(grep -oP 'VERSION\s*=\s*"\K[^"]+' main.py)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Baixar artefatos (Windows)
         uses: actions/download-artifact@v4
         with:
           name: Windows-build
           path: ./dist/windows
 
-      - name: 📦 Baixar artefatos (Linux)
+      - name: Baixar artefatos (Linux)
         uses: actions/download-artifact@v4
         with:
           name: Linux-build
           path: ./dist/linux
 
-#      - name: 📦 Baixar artefatos (macOS)
+#      - name: Baixar artefatos (macOS)
 #        uses: actions/download-artifact@v4
 #        with:
 #          name: macOS-build
 #          path: ./dist/macos
 
-      - name: 🔍 Obter versão do código
-        id: get_version
-        run: |
-          VERSION=$(python -c "import main; print(main.VERSION)")
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: 🚀 Criar release e enviar executáveis
+      - name: Criar release e enviar executáveis
         uses: softprops/action-gh-release@v2
         with:
-          name: Release ${{ steps.get_version.outputs.version }}
-          tag_name: ${{ steps.get_version.outputs.version }}
+          name: Release ${{ env.VERSION }}
+          tag_name: ${{ env.VERSION }}
           draft: false
           prerelease: false
           files: |
-            dist/windows/*
+            dist/windows/*.exe
             dist/linux/*
 #            dist/macos/*.zip
 
@@ -95,14 +106,16 @@ jobs:
     needs: build
     if: ${{ failure() }}
     runs-on: ubuntu-latest
-
     steps:
-      - name: 🔍 Obter versão do código
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Obter versão do código
         run: |
-          VERSION=$(python -c "import main; print(main.VERSION)")
+          VERSION=$(grep -oP 'VERSION\s*=\s*"\K[^"]+' main.py)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: ❌ Deletar release e tag se build falhar
+      - name: Deletar tag e release se falhar
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
