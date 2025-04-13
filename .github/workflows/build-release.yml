@@ -17,7 +17,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [
+          ubuntu-latest,
+          windows-latest,
+#          macos-latest
+        ]
 
     steps:
       - name: Checkout código
@@ -50,14 +54,14 @@ jobs:
           VERSION=$(python -c "import main; print(main.VERSION)")
           mv dist/${{ env.EXECUTABLE_NAME }} dist/${{ env.EXECUTABLE_NAME }}_linux_x86_64-${VERSION}
 
-      - name: Renomear e zipar executável (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          VERSION=$(python -c "import main; print(main.VERSION)")
-          mv dist/${{ env.EXECUTABLE_NAME }} dist/${{ env.EXECUTABLE_NAME }}_universal_apple_darwin-${VERSION}
-          cd dist
-          zip UVV_Toolkit_universal_apple_darwin-${VERSION}.zip UVV_Toolkit_universal_apple_darwin-${VERSION}
-          rm UVV_Toolkit_universal_apple_darwin-${VERSION}
+#      - name: Renomear e zipar executável (macOS)
+#        if: runner.os == 'macOS'
+#        run: |
+#          VERSION=$(python -c "import main; print(main.VERSION)")
+#          mv dist/${{ env.EXECUTABLE_NAME }} dist/${{ env.EXECUTABLE_NAME }}_universal_apple_darwin-${VERSION}
+#          cd dist
+#          zip UVV_Toolkit_universal_apple_darwin-${VERSION}.zip UVV_Toolkit_universal_apple_darwin-${VERSION}
+#          rm UVV_Toolkit_universal_apple_darwin-${VERSION}
 
       - name: Upload de artefatos
         uses: actions/upload-artifact@v4
@@ -83,11 +87,11 @@ jobs:
           name: Linux-build
           path: ./dist/linux
 
-      - name: Baixar artefatos (macOS)
-        uses: actions/download-artifact@v4
-        with:
-          name: macOS-build
-          path: ./dist/macos
+#      - name: Baixar artefatos (macOS)
+#        uses: actions/download-artifact@v4
+#        with:
+#          name: macOS-build
+#          path: ./dist/macos
 
       - name: Obter versão do código
         id: get_version
@@ -106,7 +110,7 @@ jobs:
           files: |
             dist/windows/*.exe
             dist/linux/*
-            dist/macos/*.zip
+#            dist/macos/*.zip
 
   rollback:
     needs: build
