@@ -9,6 +9,10 @@ permissions:
   contents: write
   actions: write
 
+env:
+  VERSION: v1.0.0
+  EXECUTABLE_NAME: UVV_Toolkit
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -25,17 +29,33 @@ jobs:
         with:
           python-version: 3.11
 
-      - name: Instalar PyInstaller
+      - name: Instalar dependências
         run: |
           python -m pip install --upgrade pip
           pip install pyinstaller
 
       - name: Rodar build com PyInstaller
-        run: |
-          python build.py
+        run: python build.py
         shell: bash
 
-      - name: Upload artefato
+      - name: Renomear executável (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          mv dist/${{ env.EXECUTABLE_NAME }}.exe dist/${{ env.EXECUTABLE_NAME }}_win_x86_64-${{ env.VERSION }}.exe
+
+      - name: Renomear executável (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          mv dist/${{ env.EXECUTABLE_NAME }} dist/${{ env.EXECUTABLE_NAME }}_linux_x86_64-${{ env.VERSION }}
+
+      - name: Compactar app macOS
+        if: runner.os == 'macOS'
+        run: |
+          cd dist
+          zip -r ${{ env.EXECUTABLE_NAME }}_universal_apple_darwin-${{ env.VERSION }}.zip ${{ env.EXECUTABLE_NAME }}.app
+          rm -rf ${{ env.EXECUTABLE_NAME }}.app
+
+      - name: Upload de artefatos
         uses: actions/upload-artifact@v4
         with:
           name: ${{ runner.os }}-build
@@ -48,9 +68,6 @@ jobs:
     if: ${{ success() }}
 
     steps:
-      - name: Checkout código
-        uses: actions/checkout@v4
-
       - name: Baixar artefatos (Windows)
         uses: actions/download-artifact@v4
         with:
@@ -69,14 +86,7 @@ jobs:
           name: macOS-build
           path: ./dist/macos
 
-      - name: Extrair versão do main.py
-        id: extract_version
-        run: |
-          VERSION=$(grep 'VERSION =' main.py | sed -E 's/.*\"(.*)\".*/\1/')
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "Versão detectada: $VERSION"
-
-      - name: Criar release
+      - name: Criar release e enviar executáveis
         uses: softprops/action-gh-release@v2
         with:
           name: Release ${{ env.VERSION }}
@@ -84,27 +94,21 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            dist/windows/*
+            dist/windows/*.exe
             dist/linux/*
-            dist/macos/*
+            dist/macos/*.zip
 
   rollback:
     needs: build
     if: ${{ failure() }}
     runs-on: ubuntu-latest
     steps:
-      - name: Extrair versão do main.py
-        id: extract_version
-        run: |
-          VERSION=$(grep 'VERSION =' main.py | sed -E 's/.*\"(.*)\".*/\1/')
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "Versão detectada: $VERSION"
-
-      - name: Deletar release e tag
+      - name: Deletar tag e release se falhar
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
+          VERSION: v1.0.0
         run: |
-          echo "🧨 Build falhou. Deletando tag e release da versão $VERSION..."
-          gh release delete "$VERSION" --yes || true
+          echo "🔁 Build falhou. Deletando tag e release..."
+          gh release delete $VERSION --yes || true
           gh api -X DELETE /repos/${{ github.repository }}/git/refs/tags/$VERSION || true
         shell: bash
