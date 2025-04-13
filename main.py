@@ -3,6 +3,7 @@ import json
 import menu
 import busca_provas_corrigidas
 import traceback
+from pathlib import Path
 
 SOFTWARE_NAME = "UVV CLI Toolkit"
 VERSION = "v1.0.0"
@@ -62,6 +63,10 @@ def executar_opcao(label, chave):
         input("\nPressione Enter para voltar ao menu...")
 
 def main():
+    if not Path(CONFIG_FILE).exists():
+        print("[⚙️] Primeira execução detectada. Vamos configurar sua conta UVV.")
+        configurar_usuario()
+
     while True:
         opcoes_menu = [label for label, _ in menu_options]
         escolha_index = menu.Menu(opcoes_menu, color=menu.Colors.CYAN, style=menu.Styles.SELECTED, pretext=HEADER).launch(response="Index")
